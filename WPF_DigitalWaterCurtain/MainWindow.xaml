@@ -1,0 +1,38 @@
+﻿<Window x:Class="WPF_DigitalWaterCurtain.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WPF_DigitalWaterCurtain"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid Background="LightBlue">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="0.6*"/>
+            <RowDefinition Height="0.15*"/>
+            <RowDefinition Height="0.25*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <ScrollViewer Grid.Row="2" Grid.Column="0" Name="ThumbnailScrollViewer"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Disabled"
+                      Height="120">
+            <StackPanel Name="ThumbnailPanel" Orientation="Horizontal" Background="LightGray"/>
+        </ScrollViewer>
+
+        <!-- StackPanel for arranging buttons -->
+        <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Bottom">
+            <Button Name="PrevButton" Content="&#60;&#60;Previous" Margin="10,0,0,0" Click="PrevButton_Click"/>
+            <Button Name="LoadButton" Content="Load Images" Margin="10,0,0,0" Click="LoadButton_Click"/>
+            <!-- New button added -->
+        </StackPanel>
+
+        <Button Name="NextButton" Content="Next>>" Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="NextButton_Click"/>
+
+        <Image Name="MainImage" Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    </Grid>
+</Window>
