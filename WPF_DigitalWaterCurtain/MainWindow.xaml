@@ -28,6 +28,7 @@
         <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Bottom">
             <Button Name="PrevButton" Content="&#60;&#60;Previous" Margin="10,0,0,0" Click="PrevButton_Click"/>
             <Button Name="LoadButton" Content="Load Images" Margin="10,0,0,0" Click="LoadButton_Click"/>
+            <Button Name="SendButton" Content="Send Images" Margin="10,0,0,0" Click="SendButton_Click"/>
             <!-- New button added -->
         </StackPanel>
 

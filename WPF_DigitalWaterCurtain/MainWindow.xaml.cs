@@ -19,6 +19,7 @@ using FireSharp.Interfaces;
 using FireSharp.Response;
 using static MaterialDesignThemes.Wpf.Theme;
 using System.Windows.Markup;
+using System.IO;
 
 
 namespace WPF_DigitalWaterCurtain
@@ -33,8 +34,8 @@ namespace WPF_DigitalWaterCurtain
 
         IFirebaseConfig config = new FirebaseConfig
         {
-            AuthSecret= "vIh7Mem9O5129VMl5kcNPPwzZUk7S3kVHVqgPR8M",
-            BasePath= "https://water-curtain-default-rtdb.firebaseio.com/"
+            AuthSecret = "1zjb4u8SFhRvUKVioAO2HaQFRujXzDMjE7Ir46PZ",
+            BasePath = "https://digitalwatercurtain-default-rtdb.firebaseio.com/"
         };
 
         IFirebaseClient client;
@@ -43,11 +44,12 @@ namespace WPF_DigitalWaterCurtain
             InitializeComponent();
 
             client = new FireSharp.FirebaseClient(config);
-            if (client != null )
+            if (client != null)
             {
                 MessageBox.Show("Connection is established");
             }
-            Insert_Click();
+            //Insert_Click();
+            //LoadFromFireBase();
         }
 
         private async void Insert_Click()
@@ -57,9 +59,9 @@ namespace WPF_DigitalWaterCurtain
                 Id = "abc"
             };
 
-            SetResponse response = await client.SetTaskAsync("Information/" + "a", data);
+            SetResponse response = await client.SetTaskAsync("Information/" + "b", data);
 
-            Data result = response.ResultAs<Data>();
+            //Data result = response.ResultAs<Data>();
 
             MessageBox.Show("Data Inserted");
         }
@@ -187,6 +189,134 @@ namespace WPF_DigitalWaterCurtain
                 {
                     thumbnail.BringIntoView(new Rect(0, 0, thumbnail.RenderSize.Width, thumbnail.RenderSize.Height));
                 }
+            }
+        }
+
+        private async void SendButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ThumbnailPanel.Children.Count == 0)
+            {
+                MessageBox.Show("No images available to send.");
+                return;
+            }
+
+            try
+            {
+                // Step 1: Send the number of images to the NumOfImg path
+                int numOfImages = ThumbnailPanel.Children.Count;
+                var num = new Count
+                {
+                    count = numOfImages.ToString()
+                };
+                await client.SetTaskAsync("NumOfImg", num);
+
+                // Step 2: Delete existing images from Firebase
+                await client.DeleteTaskAsync("Image/");
+
+                // Step 3: Upload new images as a single JSON object
+                Dictionary<string, string> imagesData = new Dictionary<string, string>();
+
+                for (int i = 0; i < ThumbnailPanel.Children.Count; i++)
+                {
+                    if (ThumbnailPanel.Children[i] is Border border && border.Child is Image image)
+                    {
+                        // Convert the image source to a Bitmap for encoding
+                        BitmapSource bitmapSource = image.Source as BitmapSource;
+                        if (bitmapSource != null)
+                        {
+                            using (MemoryStream ms = new MemoryStream())
+                            {
+                                BitmapEncoder encoder = new JpegBitmapEncoder();
+                                encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
+                                encoder.Save(ms);
+
+                                byte[] byteArray = ms.ToArray();
+                                string output = Convert.ToBase64String(byteArray);
+
+                                // Add the image data to the dictionary
+                                string imageName = $"Img{i + 1}";
+                                imagesData[imageName] = output;
+                            }
+                        }
+                    }
+                }
+
+                // Send the entire dictionary as a JSON object to Firebase
+                await client.SetTaskAsync("Image", imagesData);
+
+                MessageBox.Show("All images inserted as a single JSON object");
+
+
+                //MessageBox.Show("All images inserted");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}");
+            }
+        }
+
+        private async void LoadFromFireBase()
+        {
+            try
+            {
+                // Get the number of images stored in Firebase
+                FirebaseResponse numResponse = await client.GetTaskAsync("NumOfImg");
+                var numData = numResponse.ResultAs<Count>();
+                int numOfImages = int.Parse(numData.count);
+
+                // Clear any existing thumbnails
+                ThumbnailPanel.Children.Clear();
+                imagePaths.Clear(); // Clear local image paths list
+
+                // Load images from Firebase
+                for (int i = 0; i < numOfImages; i++)
+                {
+                    string imageName = $"Img{i + 1}";
+                    FirebaseResponse response = await client.GetTaskAsync($"Image/{imageName}");
+                    var imageData = response.ResultAs<Image_Modal>();
+
+                    if (imageData != null && !string.IsNullOrEmpty(imageData.Img))
+                    {
+                        // Convert Base64 string back to BitmapImage
+                        byte[] imageBytes = Convert.FromBase64String(imageData.Img);
+                        using (MemoryStream ms = new MemoryStream(imageBytes))
+                        {
+                            BitmapImage bitmap = new BitmapImage();
+                            bitmap.BeginInit();
+                            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                            bitmap.StreamSource = ms;
+                            bitmap.EndInit();
+                            bitmap.Freeze();
+
+                            // Add the image to the thumbnails panel
+                            var border = new Border
+                            {
+                                BorderThickness = new Thickness(0),
+                                BorderBrush = Brushes.Red,
+                                Margin = new Thickness(5),
+                                Child = new Image
+                                {
+                                    Source = bitmap,
+                                    Width = 100,
+                                    Height = 100,
+                                    Tag = i
+                                }
+                            };
+
+                            border.MouseLeftButtonUp += Thumbnail_Click;
+                            ThumbnailPanel.Children.Add(border);
+                        }
+                    }
+                }
+
+                MessageBox.Show("Images loaded from Firebase");
+                currentIndex = 0;
+                UpdateButtons();
+                
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading images: {ex.Message}");
             }
         }
 
